@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing and staging
+_staging/
+*.log
+
+# Production build artifacts
+dist/assets/*.map
+*.zip
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE configs
+.vscode/
+.idea/

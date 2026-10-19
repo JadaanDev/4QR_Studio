@@ -1,0 +1,110 @@
+/**
+ * Jadaan.Dev — Core UI Components & Micro-Interactions (Pure CSS)
+ * No Tailwind dependency required.
+ */
+
+/* Ambient Radial Glow Backdrop */
+.ambient-glow {
+    background: radial-gradient(
+        circle at 50% 20%, 
+        rgba(6, 182, 212, 0.15) 0%, 
+        rgba(147, 51, 234, 0.08) 35%, 
+        rgba(6, 7, 8, 0) 70%
+    );
+}
+
+/* Link Card Base & States */
+.link-card {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    background-color: rgba(11, 12, 14, 0.9);
+    border: 1px solid var(--color-onyx-800);
+}
+
+.link-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(34, 211, 238, 0.45);
+    background-color: var(--color-onyx-850);
+    box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.08);
+}
+
+.link-card:active {
+    transform: scale(0.985);
+}
+
+/* Directional Arrow / Chevron Flipping */
+.flip-icon {
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[dir="rtl"] .flip-icon {
+    transform: scaleX(-1);
+}
+
+/* Language Switcher Button (Calm Physics) */
+#langToggle {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#langToggle:hover {
+    box-shadow: 0 0 14px rgba(6, 182, 212, 0.18);
+    border-color: rgba(34, 211, 238, 0.4);
+}
+
+#langToggle:active {
+    transform: scale(0.95);
+}
+
+#langIcon {
+    transition: transform 0.65s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+/* Language Button Text Cross-fade */
+#langBtnText {
+    display: inline-block;
+    transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-text-fade-out {
+    opacity: 0;
+    transform: translateY(-2.5px) scale(0.96);
+}
+
+.lang-text-fade-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Entire Site Content Dissolve Transition (Relaxed & Deliberate) */
+#siteContent {
+    transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1), transform 0.38s cubic-bezier(0.4, 0, 0.2, 1), filter 0.38s ease;
+    will-change: opacity, transform, filter;
+}
+
+.site-content-fade-out {
+    opacity: 0.15;
+    transform: translateY(4px) scale(0.995);
+    filter: blur(1.5px);
+}
+
+.site-content-fade-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+}
+
+/* Status Badge Text Sync */
+#badgeStatusText {
+    display: inline-block;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge-fade-out {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.95);
+}
+
+.badge-fade-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
