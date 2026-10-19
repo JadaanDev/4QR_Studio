@@ -48,6 +48,9 @@ class QR_Shortcode {
         if ( file_exists( QR_PLUGIN_DIR . 'assets/components.css' ) ) {
             wp_enqueue_style( '4qr-components', $assets_url . 'components.css', array(), QR_PLUGIN_VERSION );
         }
+        if ( file_exists( QR_PLUGIN_DIR . 'assets/admin-overrides.css' ) ) {
+            wp_enqueue_style( '4qr-admin-overrides', $assets_url . 'admin-overrides.css', array(), QR_PLUGIN_VERSION );
+        }
 
         if ( $css_rel && file_exists( $dist_dir . $css_rel ) ) {
             wp_enqueue_style( 'qr-studio-app-css', $dist_url . $css_rel, array(), QR_PLUGIN_VERSION );
@@ -57,11 +60,13 @@ class QR_Shortcode {
             wp_enqueue_script( 'qr-studio-app-js', $dist_url . $js_rel, array(), QR_PLUGIN_VERSION, true );
 
             wp_localize_script( 'qr-studio-app-js', 'qrStudioData', array(
-                'isWp'     => true,
-                'restUrl'  => esc_url_raw( rest_url( 'qr-studio/v1/' ) ),
-                'nonce'    => wp_create_nonce( 'wp_rest' ),
-                'siteUrl'  => home_url(),
-                'adminUrl' => admin_url(),
+                'isWp'       => true,
+                'isAdmin'    => false,
+                'isFrontend' => true,
+                'restUrl'    => esc_url_raw( rest_url( 'qr-studio/v1/' ) ),
+                'nonce'      => wp_create_nonce( 'wp_rest' ),
+                'siteUrl'    => home_url(),
+                'adminUrl'   => admin_url(),
             ) );
         }
     }
@@ -74,12 +79,24 @@ class QR_Shortcode {
     }
 
     public static function render_generator_shortcode( $atts ) {
+        $atts = shortcode_atts( array(
+            'takeover' => 'true',
+        ), $atts, 'qr_generator' );
+
         self::enqueue_frontend_assets();
-        return '<div id="qr-studio-root" data-view="generator" class="qr-studio-embed"></div>';
+
+        $takeover_class = ( 'false' !== $atts['takeover'] ) ? 'qr-studio-fullscreen-takeover' : '';
+        return '<div id="qr-studio-root" data-view="generator" data-takeover="' . esc_attr( $atts['takeover'] ) . '" class="qr-studio-embed ' . esc_attr( $takeover_class ) . '"></div>';
     }
 
     public static function render_analytics_shortcode( $atts ) {
+        $atts = shortcode_atts( array(
+            'takeover' => 'true',
+        ), $atts, 'qr_analytics' );
+
         self::enqueue_frontend_assets();
-        return '<div id="qr-studio-root" data-view="analytics" class="qr-studio-embed"></div>';
+
+        $takeover_class = ( 'false' !== $atts['takeover'] ) ? 'qr-studio-fullscreen-takeover' : '';
+        return '<div id="qr-studio-root" data-view="analytics" data-takeover="' . esc_attr( $atts['takeover'] ) . '" class="qr-studio-embed ' . esc_attr( $takeover_class ) . '"></div>';
     }
 }

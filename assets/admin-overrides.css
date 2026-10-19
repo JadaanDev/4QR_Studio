@@ -1,0 +1,332 @@
+/**
+ * 4QR Studio — WordPress Admin Style Overrides & Frontend Shortcode Takeover
+ * Ensures pure Jadaan.Dev Onyx Dark Minimal aesthetics without WP core UI contamination.
+ */
+
+/* ==========================================================================
+   1. WordPress Admin Chrome & Canvas Overrides (toplevel_page_qr-studio)
+   ========================================================================== */
+body.toplevel_page_qr-studio,
+body.toplevel_page_qr-studio #wpwrap,
+body.toplevel_page_qr-studio #wpcontent {
+    background-color: #060708 !important;
+    color: #e5e5e8 !important;
+}
+
+body.toplevel_page_qr-studio #wpcontent {
+    padding: 0 !important;
+    margin-left: 160px !important;
+    min-height: 100vh !important;
+    box-sizing: border-box !important;
+}
+
+@media only screen and (max-width: 960px) {
+    body.toplevel_page_qr-studio #wpcontent {
+        margin-left: 36px !important;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    body.toplevel_page_qr-studio #wpcontent {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+}
+
+body.toplevel_page_qr-studio #wpbody {
+    padding-top: 0 !important;
+}
+
+body.toplevel_page_qr-studio #wpbody-content {
+    padding-bottom: 0 !important;
+    float: none !important;
+    width: 100% !important;
+}
+
+body.toplevel_page_qr-studio .wrap {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Hide WP Admin footer text on 4QR Studio pages */
+body.toplevel_page_qr-studio #wpfooter {
+    display: none !important;
+}
+
+/* Suppress 3rd party plugin notice banners that push down the UI */
+body.toplevel_page_qr-studio .notice:not(.qr-studio-notice),
+body.toplevel_page_qr-studio .updated:not(.qr-studio-notice),
+body.toplevel_page_qr-studio .update-nag,
+body.toplevel_page_qr-studio .error:not(.qr-studio-notice) {
+    display: none !important;
+}
+
+/* ==========================================================================
+   2. Frontend Shortcode Fullscreen Takeover
+   ========================================================================== */
+.qr-studio-fullscreen-takeover {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    z-index: 999999 !important;
+    background-color: #060708 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Compensate for WordPress admin bar when user is logged in */
+body.admin-bar .qr-studio-fullscreen-takeover {
+    top: 32px !important;
+    height: calc(100vh - 32px) !important;
+}
+
+@media screen and (max-width: 782px) {
+    body.admin-bar .qr-studio-fullscreen-takeover {
+        top: 46px !important;
+        height: calc(100vh - 46px) !important;
+    }
+}
+
+/* Lock background page scrolling when takeover is active */
+html:has(.qr-studio-fullscreen-takeover),
+body:has(.qr-studio-fullscreen-takeover),
+html.qr-studio-takeover-active,
+body.qr-studio-takeover-active {
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
+}
+
+/* ==========================================================================
+   3. Scoped Isolation & Reset for #qr-studio-root (Neutralizes WP Core CSS)
+   ========================================================================== */
+#qr-studio-root {
+    box-sizing: border-box !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    color: #e5e5e8 !important;
+    line-height: 1.5 !important;
+    text-align: left !important;
+}
+
+#qr-studio-root *,
+#qr-studio-root *::before,
+#qr-studio-root *::after {
+    box-sizing: border-box !important;
+}
+
+/* Strip WP Core UI Styles from links */
+#qr-studio-root a {
+    color: inherit;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease;
+}
+
+#qr-studio-root a:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Headings and Paragraphs Reset */
+#qr-studio-root h1,
+#qr-studio-root h2,
+#qr-studio-root h3,
+#qr-studio-root h4,
+#qr-studio-root h5,
+#qr-studio-root h6 {
+    font-family: inherit !important;
+    font-weight: inherit !important;
+    color: inherit !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+}
+
+#qr-studio-root p {
+    font-family: inherit !important;
+    color: inherit !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: inherit !important;
+}
+
+/* Strip WP Core UI Button Styles */
+#qr-studio-root button,
+#qr-studio-root .button,
+#qr-studio-root input[type="button"],
+#qr-studio-root input[type="submit"] {
+    background: transparent;
+    border: none;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    padding: 0;
+    margin: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: inherit !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
+    color: inherit;
+    cursor: pointer;
+    vertical-align: middle;
+    display: inline-flex;
+    border-radius: inherit;
+}
+
+#qr-studio-root button:focus,
+#qr-studio-root .button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+#qr-studio-root button:hover,
+#qr-studio-root .button:hover {
+    color: inherit;
+}
+
+/* Form Inputs Global Reset inside 4QR Studio */
+#qr-studio-root input,
+#qr-studio-root select,
+#qr-studio-root textarea {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Counter wp-admin/css/forms.css input rules */
+#qr-studio-root input[type="text"],
+#qr-studio-root input[type="url"],
+#qr-studio-root input[type="search"],
+#qr-studio-root input[type="number"],
+#qr-studio-root input[type="password"],
+#qr-studio-root input[type="email"] {
+    min-height: 0 !important;
+    height: auto !important;
+    box-shadow: none !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+}
+
+#qr-studio-root input[type="text"]:focus,
+#qr-studio-root input[type="url"]:focus,
+#qr-studio-root input[type="search"]:focus,
+#qr-studio-root input[type="number"]:focus,
+#qr-studio-root input[type="password"]:focus,
+#qr-studio-root input[type="email"]:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Title Input (Editable) */
+#qr-studio-root input[placeholder="QR Code Title"] {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0.125rem 0.5rem !important;
+}
+
+#qr-studio-root input[placeholder="QR Code Title"]:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: #23252d !important;
+}
+
+#qr-studio-root input[placeholder="QR Code Title"]:focus {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: #0891b2 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.25) !important;
+}
+
+/* Sliders (input range) */
+#qr-studio-root input[type="range"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: #16171c !important;
+    height: 6px !important;
+    border-radius: 9999px !important;
+    border: 1px solid #23252d !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+#qr-studio-root input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: #22d3ee !important;
+    border: 2px solid #060708 !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.4) !important;
+    transition: transform 0.15s ease !important;
+}
+
+#qr-studio-root input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15) !important;
+}
+
+/* Color Pickers */
+#qr-studio-root input[type="color"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+}
+
+/* Dropdown Selects */
+#qr-studio-root select {
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: inherit !important;
+    box-shadow: none !important;
+    font-size: inherit !important;
+}
+
+#qr-studio-root select:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Table Neutralization */
+#qr-studio-root table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+#qr-studio-root th,
+#qr-studio-root td {
+    border: none !important;
+    padding: inherit;
+    line-height: inherit !important;
+}

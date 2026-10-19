@@ -288,24 +288,24 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 md:p-8 qr-preview-shadow border border-slate-100 flex flex-col items-center">
-      {/* Live QR Render Area */}
-      <div className="relative w-[280px] h-[280px] flex items-center justify-center p-2 rounded-2xl transition-all duration-300">
-        <div ref={qrRef} className="flex items-center justify-center transition-transform hover:scale-105 duration-200" />
+    <div className="bg-[#0b0c0e] rounded-3xl p-6 md:p-8 border border-[#23252d] shadow-2xl flex flex-col items-center">
+      {/* Live QR Render Area with high-contrast scanner backing */}
+      <div className="relative flex items-center justify-center p-3 rounded-2xl bg-white shadow-lg transition-transform hover:scale-102 duration-200">
+        <div ref={qrRef} className="flex items-center justify-center" />
       </div>
 
       {/* Direct copyable link bar under QR */}
-      <div className="w-full max-w-xs mt-3 flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs">
-        <span className="font-mono text-slate-600 truncate max-w-[200px]" title={encodedData}>
+      <div className="w-full max-w-xs mt-4 flex items-center justify-between bg-[#101115] border border-[#23252d] rounded-xl px-3 py-1.5 text-xs">
+        <span className="font-mono text-[#22d3ee] truncate max-w-[200px]" title={encodedData}>
           {encodedData}
         </span>
         <button
           type="button"
           onClick={handleCopyLink}
           title="Copy link of this QR code"
-          className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer pl-2"
+          className="text-[#22d3ee] hover:text-[#06b6d4] font-semibold flex items-center gap-1 cursor-pointer pl-2"
         >
-          {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+          {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           <span>{copiedLink ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
@@ -317,10 +317,10 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
             key={fmt}
             type="button"
             onClick={() => setFormat(fmt)}
-            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg uppercase tracking-wide transition-all cursor-pointer ${
+            className={`flex-1 py-2 px-3 text-sm font-bold rounded-lg uppercase tracking-wide transition-all cursor-pointer ${
               format === fmt
-                ? 'bg-blue-50 text-blue-600 border border-blue-500 shadow-sm'
-                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-transparent'
+                ? 'bg-[#0891b2]/20 text-[#22d3ee] border border-[#0891b2] shadow-sm'
+                : 'bg-[#101115] text-[#9fa0aa] hover:text-white hover:bg-[#16171c] border border-[#23252d]'
             }`}
           >
             {fmt}
@@ -334,19 +334,19 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           type="button"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md hover:shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
+          className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#0891b2] hover:bg-[#06b6d4] active:bg-[#0891b2] transition-all shadow-md hover:shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
         >
           {isDownloading ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : downloadSuccess ? (
             <>
-              <Check className="w-5 h-5 text-white" />
+              <Check className="w-5 h-5 text-emerald-300" />
               <span>Downloaded!</span>
             </>
           ) : (
             <>
               <Download className="w-5 h-5" />
-              <span>Download</span>
+              <span>Download {format.toUpperCase()}</span>
             </>
           )}
         </button>
@@ -356,9 +356,9 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           <button
             type="button"
             onClick={handleCopyLink}
-            className="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="py-2.5 px-3 rounded-xl font-semibold text-xs text-[#ccccd2] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5 text-slate-500" />}
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5 text-[#22d3ee]" />}
             <span>{copiedLink ? 'Link Copied!' : 'Copy QR Link'}</span>
           </button>
 
@@ -366,22 +366,22 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           <button
             type="button"
             onClick={handleCopyImage}
-            className="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="py-2.5 px-3 rounded-xl font-semibold text-xs text-[#ccccd2] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            {copiedImage ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <ImageIcon className="w-3.5 h-3.5 text-slate-500" />}
+            {copiedImage ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ImageIcon className="w-3.5 h-3.5 text-[#22d3ee]" />}
             <span>{copiedImage ? 'Image Copied!' : 'Copy Image'}</span>
           </button>
         </div>
       </div>
 
       {/* Dynamic Link Tester / Scanner simulation */}
-      <div className="w-full max-w-xs mt-5 pt-4 border-t border-slate-100 flex flex-col gap-2">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span className="flex items-center gap-1 font-medium text-slate-700">
-            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+      <div className="w-full max-w-xs mt-5 pt-4 border-t border-[#23252d] flex flex-col gap-2">
+        <div className="flex items-center justify-between text-xs text-[#9fa0aa]">
+          <span className="flex items-center gap-1 font-medium text-[#ccccd2]">
+            <Sparkles className="w-3.5 h-3.5 text-[#22d3ee]" />
             Analytics Testing
           </span>
-          <span className="text-[11px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-[11px] bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 px-2 py-0.5 rounded-full font-semibold">
             Trackable
           </span>
         </div>
@@ -389,14 +389,14 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
         <button
           type="button"
           onClick={handleTestScan}
-          className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-[#101115] hover:bg-[#16171c] text-[#ccccd2] hover:text-white border border-[#23252d] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
-          <QrCode className="w-3.5 h-3.5 text-slate-500" />
+          <QrCode className="w-3.5 h-3.5 text-[#22d3ee]" />
           Simulate Camera Scan (+1 Analytics)
         </button>
 
         {scanAlert && (
-          <div className="p-2 text-xs font-medium bg-emerald-50 text-emerald-700 rounded-lg text-center animate-fade-in border border-emerald-200">
+          <div className="p-2 text-xs font-medium bg-emerald-950/60 text-emerald-300 rounded-lg text-center animate-fade-in border border-emerald-800/50">
             ✓ Scan recorded! Check the Analytics tab.
           </div>
         )}

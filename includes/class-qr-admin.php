@@ -90,6 +90,9 @@ class QR_Admin {
         if ( file_exists( QR_PLUGIN_DIR . 'assets/components.css' ) ) {
             wp_enqueue_style( '4qr-components', $assets_url . 'components.css', array(), QR_PLUGIN_VERSION );
         }
+        if ( file_exists( QR_PLUGIN_DIR . 'assets/admin-overrides.css' ) ) {
+            wp_enqueue_style( '4qr-admin-overrides', $assets_url . 'admin-overrides.css', array(), QR_PLUGIN_VERSION );
+        }
 
         if ( $css_rel && file_exists( $dist_dir . $css_rel ) ) {
             wp_enqueue_style( 'qr-studio-app-css', $dist_url . $css_rel, array(), QR_PLUGIN_VERSION );
@@ -99,11 +102,12 @@ class QR_Admin {
             wp_enqueue_script( 'qr-studio-app-js', $dist_url . $js_rel, array(), QR_PLUGIN_VERSION, true );
 
             wp_localize_script( 'qr-studio-app-js', 'qrStudioData', array(
-                'isWp'     => true,
-                'restUrl'  => esc_url_raw( rest_url( 'qr-studio/v1/' ) ),
-                'nonce'    => wp_create_nonce( 'wp_rest' ),
-                'siteUrl'  => home_url(),
-                'adminUrl' => admin_url(),
+                'isWp'      => true,
+                'isAdmin'   => true,
+                'restUrl'   => esc_url_raw( rest_url( 'qr-studio/v1/' ) ),
+                'nonce'     => wp_create_nonce( 'wp_rest' ),
+                'siteUrl'   => home_url(),
+                'adminUrl'  => admin_url(),
             ) );
         }
     }
@@ -120,15 +124,15 @@ class QR_Admin {
         $has_build = file_exists( $dist_dir . 'assets/index.js' );
 
         ?>
-        <div class="wrap" style="margin: 0; padding: 20px 20px 40px 0;">
-            <div id="qr-studio-root">
+        <div class="wrap qr-studio-admin-wrap" style="margin: 0; padding: 0;">
+            <div id="qr-studio-root" class="qr-studio-admin">
                 <?php if ( ! $has_build ) : ?>
-                    <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); max-width: 700px; margin: 40px auto; font-family: sans-serif; text-align: center;">
-                        <h2 style="font-size: 24px; color: #1e293b; margin-bottom: 12px;">QR Studio Assets Not Built Yet</h2>
-                        <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                    <div style="background: #0b0c0e; border: 1px solid #23252d; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); max-width: 700px; margin: 40px auto; font-family: sans-serif; text-align: center; color: #e5e5e8;">
+                        <h2 style="font-size: 24px; color: #ffffff; margin-bottom: 12px;">4QR Studio Assets Not Built Yet</h2>
+                        <p style="color: #9fa0aa; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
                             Please run <code>npm run build</code> inside the plugin folder to compile the React and Tailwind assets.
                         </p>
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; font-family: monospace; font-size: 13px; color: #0f172a;">
+                        <div style="background: #16171c; border: 1px solid #23252d; border-radius: 8px; padding: 16px; text-align: left; font-family: monospace; font-size: 13px; color: #22d3ee;">
                             cd <?php echo esc_html( QR_PLUGIN_DIR ); ?><br>
                             npm run build
                         </div>

@@ -5,7 +5,8 @@ import {
   List,
   Settings,
   Sparkles,
-  Plus
+  Plus,
+  ExternalLink
 } from 'lucide-react';
 import { QRCodeData } from './types';
 import { api, getSiteBaseUrl, buildShortUrl } from './api/client';
@@ -40,17 +41,40 @@ function createBlankCode(): QRCodeData {
 }
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('designer');
+  // Check initial DOM attributes for embedded view (e.g. data-view="analytics" or "generator")
+  const rootEl = typeof document !== 'undefined' ? document.getElementById('qr-studio-root') : null;
+  const initialDataView = rootEl?.getAttribute('data-view');
+  const isTakeoverMode = rootEl?.classList.contains('qr-studio-fullscreen-takeover');
+  const isWpFrontend = (window as any).qrStudioData?.isFrontend || isTakeoverMode;
+
+  const getInitialTab = (): ActiveTab => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (hash.includes('analytics')) return 'analytics';
+    if (hash.includes('codes')) return 'codes';
+    if (hash.includes('settings')) return 'settings';
+    if (initialDataView === 'analytics') return 'analytics';
+    if (initialDataView === 'codes') return 'codes';
+    return 'designer';
+  };
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(getInitialTab);
   const [codes, setCodes] = useState<QRCodeData[]>([]);
   const [selectedCode, setSelectedCode] = useState<QRCodeData>(createBlankCode);
 
+  // Lock body scroll if in takeover mode
+  useEffect(() => {
+    if (isTakeoverMode) {
+      document.documentElement.classList.add('qr-studio-takeover-active');
+      document.body.classList.add('qr-studio-takeover-active');
+    }
+    return () => {
+      document.documentElement.classList.remove('qr-studio-takeover-active');
+      document.body.classList.remove('qr-studio-takeover-active');
+    };
+  }, [isTakeoverMode]);
+
   // Check URL hash for direct tab navigation (e.g. #/analytics or #/codes)
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('analytics')) setActiveTab('analytics');
-    else if (hash.includes('codes')) setActiveTab('codes');
-    else if (hash.includes('settings')) setActiveTab('settings');
-
     const handleHash = () => {
       const h = window.location.hash;
       if (h.includes('analytics')) setActiveTab('analytics');
@@ -187,6 +211,17 @@ export const App: React.FC = () => {
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
             </button>
+
+            {isWpFrontend && (
+              <a
+                href={api.getSiteUrl() || '/'}
+                className="ml-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-[#9fa0aa] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Return to WordPress Website"
+              >
+                <ExternalLink className="w-4 h-4 text-cyan-400" />
+                <span className="hidden md:inline">Back to Site</span>
+              </a>
+            )}
           </nav>
         </div>
       </header>

@@ -102,20 +102,30 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
     }
   }, [currentCode, siteUrl]);
 
-  // Dynamically constructed short link using current WordPress site URL
+  // Clean trackable short link computed dynamically from currently active site
   const shortLink = buildShortUrl(slug);
-  const activeEncodedUrl = encodeMode === 'dynamic' ? shortLink : targetUrl;
 
-  const handleCopyShortLink = () => {
-    navigator.clipboard.writeText(shortLink);
-    setCopiedShort(true);
-    setTimeout(() => setCopiedShort(false), 2000);
+  // Active URL to be encoded into the QR pattern
+  const activeEncodedUrl = encodeMode === 'dynamic' ? shortLink : (targetUrl || shortLink);
+
+  const handleCopyShortLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shortLink);
+      setCopiedShort(true);
+      setTimeout(() => setCopiedShort(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleCopyTargetUrl = () => {
-    navigator.clipboard.writeText(targetUrl);
-    setCopiedTarget(true);
-    setTimeout(() => setCopiedTarget(false), 2000);
+  const handleCopyTargetUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(targetUrl);
+      setCopiedTarget(true);
+      setTimeout(() => setCopiedTarget(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,9 +133,10 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      setStyleConfig((prev) => ({ ...prev, logoUrl: result }));
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setStyleConfig((prev) => ({ ...prev, logoUrl: reader.result as string }));
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -151,15 +162,15 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 font-sans">
       {/* Top Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-slate-200/80 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-[#23252d] gap-4">
         <div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onBack}
-              className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-sm font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-[#101115] hover:bg-[#16171c] border border-[#23252d] rounded-lg text-[#ccccd2] hover:text-white text-sm font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -168,23 +179,23 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-bold text-slate-900 bg-transparent hover:bg-white/60 focus:bg-white px-2 py-0.5 rounded-lg border border-transparent focus:border-slate-300 focus:outline-none transition-all"
+              className="text-2xl font-bold text-white bg-transparent hover:bg-white/5 focus:bg-[#101115] px-2 py-0.5 rounded-lg border border-transparent focus:border-[#0891b2] focus:outline-none transition-all"
               placeholder="QR Code Title"
             />
           </div>
 
-          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
+          <div className="flex items-center gap-2 mt-2 text-sm text-[#9fa0aa]">
             <span>Short link</span>
-            <span className="text-slate-700 font-medium font-mono text-xs sm:text-sm bg-slate-50 px-2 py-0.5 rounded border border-slate-200/60">
+            <span className="text-[#22d3ee] font-medium font-mono text-xs sm:text-sm bg-[#101115] px-2.5 py-0.5 rounded border border-[#23252d]">
               {shortLink}
             </span>
             <button
               type="button"
               onClick={handleCopyShortLink}
               title="Copy short link"
-              className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2.5 py-1 bg-[#16171c] hover:bg-[#23252d] text-[#ccccd2] hover:text-white rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-[#23252d]"
             >
-              {copiedShort ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedShort ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedShort ? 'Copied' : 'Copy'}</span>
             </button>
           </div>
@@ -192,7 +203,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
 
         {/* Dynamic Link info & Save Button */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+          <div className="hidden sm:flex items-center gap-1.5 bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 px-3 py-1.5 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
             {encodeMode === 'dynamic' ? 'Dynamic Analytics Active' : 'Direct URL Mode'}
           </div>
@@ -200,13 +211,13 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
+            className="px-5 py-2.5 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-xl text-sm font-bold shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
           >
             {isSaving ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : saveSuccess ? (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-4 h-4 text-emerald-300" />
                 Saved
               </>
             ) : (
@@ -224,23 +235,23 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
         {/* Left Column: Generator controls */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-8">
           {/* Destination URL & Encode Mode Card */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
+          <div className="bg-[#0b0c0e] rounded-2xl p-5 border border-[#23252d] shadow-xs space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-xs font-bold text-[#9fa0aa] uppercase tracking-wider">
                   Destination URL
                 </label>
                 <button
                   type="button"
                   onClick={handleCopyTargetUrl}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-[#22d3ee] hover:text-[#06b6d4] font-semibold flex items-center gap-1 cursor-pointer"
                 >
-                  {copiedTarget ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copiedTarget ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   {copiedTarget ? 'URL Copied!' : 'Copy Destination URL'}
                 </button>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6f707f]">
                   <Globe className="w-4 h-4" />
                 </div>
                 <input
@@ -248,14 +259,14 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://yourwebsite.com/promotion"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 font-medium text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-[#101115] border border-[#23252d] rounded-xl focus:bg-[#16171c] focus:outline-none focus:border-[#0891b2] font-medium text-white placeholder-[#6f707f]"
                 />
               </div>
             </div>
 
             {/* URL Mode selection (Dynamic Trackable vs Direct URL) */}
-            <div className="pt-2 border-t border-slate-100">
-              <label className="block text-xs font-semibold text-slate-600 mb-2">
+            <div className="pt-2 border-t border-[#23252d]">
+              <label className="block text-xs font-semibold text-[#ccccd2] mb-2">
                 QR Code Link Mode:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -264,19 +275,19 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                   onClick={() => setEncodeMode('dynamic')}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     encodeMode === 'dynamic'
-                      ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20'
-                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      ? 'border-[#0891b2] bg-[#0891b2]/10 ring-2 ring-[#0891b2]/30 text-white'
+                      : 'border-[#23252d] bg-[#101115] hover:bg-[#16171c] text-[#ccccd2]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#22d3ee]" />
                       Dynamic Trackable URL
                     </span>
-                    {encodeMode === 'dynamic' && <Check className="w-4 h-4 text-blue-600" />}
+                    {encodeMode === 'dynamic' && <Check className="w-4 h-4 text-[#22d3ee]" />}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Routes via <code className="text-slate-800 font-mono text-[10px]">{shortLink}</code> to log full scan analytics and allows changing destination anytime.
+                  <p className="text-[11px] text-[#9fa0aa] mt-1">
+                    Routes via <code className="text-[#22d3ee] font-mono text-[10px]">{shortLink}</code> to log full scan analytics and allows changing destination anytime.
                   </p>
                 </button>
 
@@ -285,18 +296,18 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                   onClick={() => setEncodeMode('direct')}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     encodeMode === 'direct'
-                      ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20'
-                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      ? 'border-[#0891b2] bg-[#0891b2]/10 ring-2 ring-[#0891b2]/30 text-white'
+                      : 'border-[#23252d] bg-[#101115] hover:bg-[#16171c] text-[#ccccd2]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <Link2 className="w-3.5 h-3.5 text-slate-600" />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5 text-[#9fa0aa]" />
                       Direct Destination URL
                     </span>
-                    {encodeMode === 'direct' && <Check className="w-4 h-4 text-blue-600" />}
+                    {encodeMode === 'direct' && <Check className="w-4 h-4 text-[#22d3ee]" />}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-[11px] text-[#9fa0aa] mt-1">
                     Directly encodes your destination URL into the QR pattern without redirection.
                   </p>
                 </button>
@@ -305,12 +316,12 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
           </div>
 
           {/* Style Section */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900">Style</h2>
+          <div className="bg-[#0b0c0e] rounded-2xl p-5 border border-[#23252d] shadow-xs space-y-6">
+            <h2 className="text-xl font-bold text-white tracking-tight">Style & Customization</h2>
 
             {/* Pattern Section */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Pattern</label>
+              <label className="block text-sm font-semibold text-[#ccccd2] mb-3">Pattern</label>
               <div className="flex flex-wrap items-center gap-3">
                 {PATTERNS.map((p) => {
                   const isActive = styleConfig.pattern === p;
@@ -319,10 +330,10 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       key={p}
                       type="button"
                       onClick={() => setStyleConfig((prev) => ({ ...prev, pattern: p }))}
-                      className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all cursor-pointer bg-white ${
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
-                          ? 'border-2 border-blue-500 shadow-md ring-2 ring-blue-500/20 text-slate-900'
-                          : 'border border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-50'
+                          ? 'border-2 border-[#0891b2] bg-[#0891b2]/20 shadow-md ring-2 ring-[#0891b2]/30 text-white'
+                          : 'border border-[#23252d] bg-[#101115] hover:bg-[#16171c] text-[#9fa0aa] hover:text-white'
                       }`}
                     >
                       <PatternIcon type={p} />
@@ -334,7 +345,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
 
             {/* Corners Style Section */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Corners Style</label>
+              <label className="block text-sm font-semibold text-[#ccccd2] mb-3">Corners Style</label>
 
               {/* Corner Outer Frames */}
               <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -345,10 +356,10 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       key={cs}
                       type="button"
                       onClick={() => setStyleConfig((prev) => ({ ...prev, cornerSquare: cs }))}
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer bg-white ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
-                          ? 'border-2 border-blue-500 shadow-md ring-2 ring-blue-500/20 text-slate-900'
-                          : 'border border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-50'
+                          ? 'border-2 border-[#0891b2] bg-[#0891b2]/20 shadow-md ring-2 ring-[#0891b2]/30 text-white'
+                          : 'border border-[#23252d] bg-[#101115] hover:bg-[#16171c] text-[#9fa0aa] hover:text-white'
                       }`}
                     >
                       <CornerSquareIcon type={cs} />
@@ -366,10 +377,10 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       key={cd}
                       type="button"
                       onClick={() => setStyleConfig((prev) => ({ ...prev, cornerDot: cd }))}
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer bg-white ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
-                          ? 'border-2 border-blue-500 shadow-md ring-2 ring-blue-500/20 text-slate-900'
-                          : 'border border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-50'
+                          ? 'border-2 border-[#0891b2] bg-[#0891b2]/20 shadow-md ring-2 ring-[#0891b2]/30 text-white'
+                          : 'border border-[#23252d] bg-[#101115] hover:bg-[#16171c] text-[#9fa0aa] hover:text-white'
                       }`}
                     >
                       <CornerDotIcon type={cd} />
@@ -383,10 +394,10 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               {/* Pattern Color */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Pattern color</label>
+                <label className="block text-sm font-semibold text-[#ccccd2] mb-2">Pattern color</label>
                 <div className="flex items-center gap-2">
                   <label
-                    className="w-36 h-10 rounded-lg cursor-pointer border border-slate-300/80 shadow-xs relative overflow-hidden flex items-center justify-center transition-transform hover:scale-102"
+                    className="w-36 h-10 rounded-lg cursor-pointer border border-[#23252d] shadow-xs relative overflow-hidden flex items-center justify-center transition-transform hover:scale-102"
                     style={{ backgroundColor: styleConfig.patternColor }}
                   >
                     <input
@@ -400,17 +411,17 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                     type="text"
                     value={styleConfig.patternColor}
                     onChange={(e) => setStyleConfig((prev) => ({ ...prev, patternColor: e.target.value }))}
-                    className="w-24 px-2 py-2 text-xs font-mono font-semibold uppercase bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-center"
+                    className="w-24 px-2 py-2 text-xs font-mono font-semibold uppercase bg-[#101115] border border-[#23252d] rounded-lg text-[#22d3ee] text-center focus:outline-none focus:border-[#0891b2]"
                   />
                 </div>
               </div>
 
               {/* Background Color */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Background color</label>
+                <label className="block text-sm font-semibold text-[#ccccd2] mb-2">Background color</label>
                 <div className="flex items-center gap-2">
                   <label
-                    className="w-36 h-10 rounded-lg cursor-pointer border border-slate-300/80 shadow-xs relative overflow-hidden flex items-center justify-center transition-transform hover:scale-102 disabled:opacity-40"
+                    className="w-36 h-10 rounded-lg cursor-pointer border border-[#23252d] shadow-xs relative overflow-hidden flex items-center justify-center transition-transform hover:scale-102 disabled:opacity-40"
                     style={{ backgroundColor: styleConfig.bgColor }}
                   >
                     <input
@@ -426,7 +437,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                     disabled={styleConfig.isTransparent}
                     value={styleConfig.bgColor}
                     onChange={(e) => setStyleConfig((prev) => ({ ...prev, bgColor: e.target.value }))}
-                    className="w-24 px-2 py-2 text-xs font-mono font-semibold uppercase bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-center disabled:opacity-40"
+                    className="w-24 px-2 py-2 text-xs font-mono font-semibold uppercase bg-[#101115] border border-[#23252d] rounded-lg text-[#22d3ee] text-center disabled:opacity-40 focus:outline-none focus:border-[#0891b2]"
                   />
                 </div>
               </div>
@@ -438,7 +449,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                 type="button"
                 onClick={() => setStyleConfig((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  styleConfig.isTransparent ? 'bg-indigo-600' : 'bg-slate-300'
+                  styleConfig.isTransparent ? 'bg-[#0891b2]' : 'bg-[#23252d]'
                 }`}
               >
                 <span
@@ -447,37 +458,37 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                   }`}
                 />
               </button>
-              <span className="text-sm font-medium text-slate-700 cursor-pointer" onClick={() => setStyleConfig((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}>
+              <span className="text-sm font-medium text-[#ccccd2] cursor-pointer" onClick={() => setStyleConfig((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}>
                 Transparent background
               </span>
             </div>
 
             {/* Tip Alert */}
-            <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50/80 border border-amber-200/60 p-3 rounded-xl">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>Tip! If the code is not scanning, please make the pattern color more intense.</span>
+            <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-950/40 border border-amber-800/50 p-3 rounded-xl">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Tip! If the code is not scanning, ensure the pattern color has sufficient contrast with the background.</span>
             </div>
 
             {/* Logo Section */}
-            <div className="pt-2">
-              <h3 className="text-lg font-bold text-slate-900 mb-1">Logo</h3>
-              <p className="text-xs text-slate-500 mb-3">Upload or select logo</p>
+            <div className="pt-2 border-t border-[#23252d]">
+              <h3 className="text-lg font-bold text-white mb-1">Logo</h3>
+              <p className="text-xs text-[#9fa0aa] mb-3">Upload or select custom brand logo</p>
 
               <div className="flex items-center gap-4">
                 {/* Upload Card */}
-                <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/40 flex flex-col items-center justify-center cursor-pointer transition-all">
+                <label className="w-16 h-16 rounded-xl border-2 border-dashed border-[#23252d] hover:border-[#0891b2] bg-[#101115] hover:bg-[#16171c] flex flex-col items-center justify-center cursor-pointer transition-all">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
                     className="hidden"
                   />
-                  <Plus className="w-6 h-6 text-slate-500" />
+                  <Plus className="w-6 h-6 text-[#9fa0aa]" />
                 </label>
 
                 {/* If logo is selected */}
                 {styleConfig.logoUrl && (
-                  <div className="relative group w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center shadow-xs">
+                  <div className="relative group w-16 h-16 rounded-xl border border-[#23252d] bg-[#101115] p-1 flex items-center justify-center shadow-xs">
                     <img
                       src={styleConfig.logoUrl}
                       alt="Logo preview"
@@ -487,7 +498,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       type="button"
                       onClick={() => setStyleConfig((prev) => ({ ...prev, logoUrl: '' }))}
                       title="Remove logo"
-                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -497,9 +508,9 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
 
               {/* Logo Size and Margin Controls */}
               {styleConfig.logoUrl && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-[#101115] p-4 rounded-xl border border-[#23252d]">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    <label className="block text-xs font-semibold text-[#ccccd2] mb-1">
                       Logo Size: {Math.round((styleConfig.logoSize ?? 0.35) * 100)}%
                     </label>
                     <input
@@ -509,11 +520,11 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       step="0.01"
                       value={styleConfig.logoSize ?? 0.35}
                       onChange={(e) => setStyleConfig((prev) => ({ ...prev, logoSize: parseFloat(e.target.value) }))}
-                      className="w-full accent-blue-600"
+                      className="w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    <label className="block text-xs font-semibold text-[#ccccd2] mb-1">
                       Logo Margin: {styleConfig.logoMargin ?? 6}px
                     </label>
                     <input
@@ -523,7 +534,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                       step="1"
                       value={styleConfig.logoMargin ?? 6}
                       onChange={(e) => setStyleConfig((prev) => ({ ...prev, logoMargin: parseInt(e.target.value, 10) }))}
-                      className="w-full accent-blue-600"
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -533,7 +544,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
         </div>
 
         {/* Right Column: Live QR Preview Card (Floating / Sticky) */}
-        <div className="lg:col-span-5 xl:col-span-4 sticky top-6">
+        <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
           <QRPreview
             dataUrl={targetUrl}
             shortUrl={shortLink}
