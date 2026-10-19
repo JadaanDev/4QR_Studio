@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: 4QR Studio - Dynamic QR Code Generator & Analytics
- * Plugin URI:  https://github.com/example/qr-wp-plugin
+ * Plugin URI:  https://github.com/JadaanDev/4QR_Studio
  * Description: High-conversion Dynamic QR Code Generator with custom patterns, corner frames, logos, and real-time scan analytics tracking. Built with React & TailwindCSS.
  * Version:     1.0.0
  * Author:      4QR Studio Team

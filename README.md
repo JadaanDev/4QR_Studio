@@ -2,31 +2,7 @@
 
 A high-conversion **Dynamic QR Code Generator** WordPress Plugin built with **React**, **TailwindCSS**, and **Vite**, featuring custom styles (patterns, frames, eyes, colors, transparency, logos), high-resolution downloads (PNG, SVG, PDF), and real-time **Scan Analytics Tracking**.
 
-Matches the **Jadaan.Dev Onyx Minimal Foundation** with self-hosted offline fonts and vector icons.
-
----
-
-## 🎨 Asset Structure (100% Offline / Zero-CDN)
-```text
-assets/
-├── fonts.css         # 100% Offline @font-face rules pointing to local ./fonts/
-├── fonts/            # 56 downloaded .woff2 font files (IBM Plex Sans Arabic, Inter, JetBrains Mono)
-├── tokens.css        # Pure CSS custom properties (:root variables), dark body base & ::selection
-├── components.css    # Reusable vanilla classes (.link-card, .ambient-glow, .flip-icon, physics)
-├── README.md         # Asset documentation
-└── icons/            # Scalable, optimized vector SVG icons
-    ├── x.svg             # X / Twitter brand mark
-    ├── telegram.svg      # Telegram brand icon
-    ├── telegram-chat.svg # Telegram direct chat icon
-    ├── github.svg        # GitHub Octocat mark
-    ├── tiktok.svg        # TikTok brand icon
-    ├── youtube.svg       # YouTube brand icon
-    ├── mail.svg          # Direct email icon
-    ├── globe.svg         # Internationalization language toggle globe
-    ├── chevron.svg       # Direction-aware arrow chevron
-    ├── copy.svg          # Clipboard copy icon
-    └── check.svg         # Confirmation checkmark icon
-```
+Designed following **[jadaan.dev](https://jadaan.dev)** styling vibes (Onyx Dark Minimal design system with offline self-hosted fonts and vector icons).
 
 ---
 
