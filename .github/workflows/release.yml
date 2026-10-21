@@ -30,6 +30,10 @@ jobs:
         run: find includes tests -name '*.php' -print0 | xargs -0 -n1 php -l && php -l qr-wp-plugin.php
       - run: php tests/test_backend.php
       - run: php tests/test_admin.php
+      - name: Verify generated plan page
+        run: |
+          python3 scripts/build-plan-page.py
+          git diff --exit-code -- UI-UX-PLAN.html
       - name: Build distributable
         run: python3 make_zip.py --rebuild --method zipfile
       - name: Check release version

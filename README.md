@@ -53,7 +53,8 @@ The ZIP contains PHP, compiled `dist/`, runtime assets and documentation inside 
 
 Pushes to `main` and pull requests run verification and produce an installable ZIP artifact. Push a matching version tag, such as `v1.1.0`, to run verification again and publish a GitHub Release with the ZIP attached. Installing that release on a live WordPress site is a separate action.
 
-- [UI/UX improvement plan](UI-UX-PLAN.md): complete journeys, priorities, acceptance checks and delivery roadmap, with shipped work separated from future work.
+- [Explore the UI/UX plan](UI-UX-PLAN.html): an offline HTML page with chapter navigation, search, roadmap filters, theme switching and printing. [Markdown source](UI-UX-PLAN.md).
+- Regenerate the HTML after editing the Markdown with `python scripts/build-plan-page.py`.
 - [Changelog and upgrade notes](CHANGELOG.md).
 
 Local mocked tests and layout fixtures do not replace installation and scanning tests on a real WordPress/MySQL staging site.

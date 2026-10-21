@@ -28,6 +28,7 @@ INCLUDE_FILES = [
     "README.md",
     "CHANGELOG.md",
     "UI-UX-PLAN.md",
+    "UI-UX-PLAN.html",
 ]
 
 INCLUDE_DIRS = [
