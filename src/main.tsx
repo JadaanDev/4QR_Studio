@@ -5,12 +5,12 @@ import './index.css';
 
 const rootElement = document.getElementById('qr-studio-root');
 
-if (rootElement) {
+if (rootElement && (window.qrStudioData?.isAdmin || import.meta.env.DEV)) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   );
-} else {
-  console.warn('QR Studio root element #qr-studio-root not found in DOM.');
+} else if (rootElement) {
+  rootElement.textContent = 'Open 4QR Studio from your WordPress admin dashboard.';
 }

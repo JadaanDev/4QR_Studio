@@ -125,19 +125,43 @@ class QR_REST {
             return new WP_Error( 'missing_url', 'Target URL or content is required', array( 'status' => 400 ) );
         }
 
-        // Check if $id exists in database
+        // Keep the existing code ID so renames retain their scan history.
+        $existing = null;
         if ( $id > 0 ) {
-            $exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) );
-            if ( ! $exists ) {
-                $id = 0; // Fallback to insert if record does not exist
+            $existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) );
+            if ( ! $existing ) {
+                return new WP_Error( 'not_found', 'QR code not found. Reload My Codes and try again.', array( 'status' => 404 ) );
             }
+        }
+
+        if ( array_key_exists( 'slug', $params ) ) {
+            if ( ! is_string( $params['slug'] ) || ! preg_match( '/\A[a-zA-Z0-9_-]{1,64}\z/', $params['slug'] ) ) {
+                return new WP_Error( 'invalid_slug', 'Use 1–64 letters, numbers, hyphens or underscores for the QR Code Link.', array( 'status' => 400 ) );
+            }
+            $slug = $params['slug'];
+        } elseif ( $existing ) {
+            $slug = $existing->slug;
+        } else {
+            do {
+                $slug = wp_generate_password( 6, false );
+            } while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE LOWER(slug) = LOWER(%s)", $slug ) ) );
+        }
+
+        // Redirects are case-insensitive, so uniqueness checks must be too.
+        $conflict = $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$table} WHERE LOWER(slug) = LOWER(%s) AND id <> %d",
+            $slug, $id
+        ) );
+        if ( $conflict ) {
+            return new WP_Error( 'slug_conflict', 'This QR Code Link is already in use. Choose another link.', array( 'status' => 409 ) );
         }
 
         if ( $id > 0 ) {
             // Update
-            $wpdb->update(
+            $result = $wpdb->update(
                 $table,
                 array(
+                    'slug'         => $slug,
                     'title'        => $title,
                     'qr_type'      => $qr_type,
                     'target_url'   => $target_url,
@@ -146,17 +170,9 @@ class QR_REST {
                 ),
                 array( 'id' => $id )
             );
-            $slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$table} WHERE id = %d", $id ) );
         } else {
             // Insert
-            $slug = ! empty( $params['slug'] ) ? sanitize_title( $params['slug'] ) : wp_generate_password( 6, false );
-
-            // Ensure unique slug
-            while ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE slug = %s", $slug ) ) > 0 ) {
-                $slug = wp_generate_password( 6, false );
-            }
-
-            $wpdb->insert(
+            $result = $wpdb->insert(
                 $table,
                 array(
                     'slug'         => $slug,
@@ -169,6 +185,10 @@ class QR_REST {
                 )
             );
             $id = (int) $wpdb->insert_id;
+        }
+
+        if ( false === $result ) {
+            return new WP_Error( 'save_failed', 'Could not save this QR code. The link may have just been taken; try again.', array( 'status' => 500 ) );
         }
 
         $site_url = function_exists( 'home_url' ) ? home_url() : '';

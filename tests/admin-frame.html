@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" class="wp-toolbar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin layout fixture</title>
+  <!-- Simulates core geometry, not a full WordPress integration environment.
+       Reference: WordPress wp-admin/css/common.css and wp-includes/css/admin-bar.css. -->
+  <style>
+    html { --wp-admin--admin-bar--height:32px; }
+    html,body { margin:0;padding:0; }
+    html.wp-toolbar { padding-top:var(--wp-admin--admin-bar--height);box-sizing:border-box; }
+    body { font:13px system-ui;background:#f0f0f1; }
+    #wpadminbar { position:fixed;top:0;left:0;right:0;height:32px;background:#1d2327;color:white;z-index:99999;display:flex;align-items:center;padding:0 12px; }
+    #adminmenuwrap { width:160px;position:absolute;top:32px;bottom:0;background:#1d2327;color:white;padding-top:24px; }
+    #wpcontent { margin-left:160px;padding-left:20px; }
+    .folded #wpcontent { margin-left:36px; }
+    .folded #adminmenuwrap { width:36px;font-size:9px; }
+    .notice { padding:12px;background:white;border-left:4px solid #72aee6; }
+    input[type=text],input[type=url] { background:white;border:1px solid #8c8f94;color:#2c3338;min-height:30px; }
+    @media(max-width:960px) and (min-width:783px) { #wpcontent{margin-left:36px} #adminmenuwrap{width:36px;font-size:9px} }
+    @media(max-width:782px) {
+      html { --wp-admin--admin-bar--height:46px; }
+      #wpadminbar { height:46px; }
+      #wpcontent { margin-left:0; }
+      #adminmenuwrap { display:none; }
+    }
+    @media(max-width:600px) {
+      html.wp-toolbar { padding-top:0; }
+      #wpbody { padding-top:46px; }
+      #wpadminbar { position:absolute; }
+    }
+  </style>
+  <link rel="stylesheet" href="/assets/tokens.css">
+  <link rel="stylesheet" href="/assets/fonts.css">
+  <link rel="stylesheet" href="/assets/components.css">
+</head>
+<body class="wp-admin admin-bar toplevel_page_qr-studio">
+  <script>if(new URLSearchParams(location.search).has('folded'))document.body.classList.add('folded');</script>
+  <div id="wpadminbar">WordPress · Layout fixture</div>
+  <div id="wpwrap">
+    <aside id="adminmenuwrap">Dashboard<br><br>4QR Studio</aside>
+    <div id="wpcontent"><div id="wpbody"><div id="wpbody-content">
+      <div class="notice">A WordPress notice remains visible above the app.</div>
+      <div class="wrap qr-studio-admin-wrap"><div id="qr-studio-root"></div></div>
+    </div></div></div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

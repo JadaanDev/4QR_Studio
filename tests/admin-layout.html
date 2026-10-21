@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>4QR Studio admin layout fixture</title>
+<style>body{margin:0;background:#ddd;font:14px system-ui}nav{padding:12px}a{margin-right:20px}iframe{display:block;border:1px solid #888;max-width:100%;height:1100px}</style>
+<nav aria-label="Fixture viewport"><a href="?width=1100">Desktop</a><a href="?width=900&folded=1">Folded sidebar</a><a href="?width=768">Tablet</a><a href="?width=375">Phone</a></nav>
+<p style="padding:0 12px">Layout fixture only; WordPress-shaped chrome with the real app. No live WordPress server.</p>
+<iframe title="WordPress admin layout fixture"></iframe>
+<script>
+const params = new URLSearchParams(location.search);
+const frame = document.querySelector('iframe');
+frame.width = String(Number(params.get('width')) || 1100);
+frame.src = './admin-frame.html' + (params.get('folded') ? '?folded=1' : '');
+</script>
+</html>

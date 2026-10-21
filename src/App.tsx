@@ -4,9 +4,6 @@ import {
   BarChart3,
   List,
   Settings,
-  Sparkles,
-  Plus,
-  ExternalLink
 } from 'lucide-react';
 import { QRCodeData } from './types';
 import { api, getSiteBaseUrl, buildShortUrl } from './api/client';
@@ -41,37 +38,17 @@ function createBlankCode(): QRCodeData {
 }
 
 export const App: React.FC = () => {
-  // Check initial DOM attributes for embedded view (e.g. data-view="analytics" or "generator")
-  const rootEl = typeof document !== 'undefined' ? document.getElementById('qr-studio-root') : null;
-  const initialDataView = rootEl?.getAttribute('data-view');
-  const isTakeoverMode = rootEl?.classList.contains('qr-studio-fullscreen-takeover');
-  const isWpFrontend = (window as any).qrStudioData?.isFrontend || isTakeoverMode;
-
   const getInitialTab = (): ActiveTab => {
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (hash.includes('analytics')) return 'analytics';
     if (hash.includes('codes')) return 'codes';
     if (hash.includes('settings')) return 'settings';
-    if (initialDataView === 'analytics') return 'analytics';
-    if (initialDataView === 'codes') return 'codes';
     return 'designer';
   };
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(getInitialTab);
   const [codes, setCodes] = useState<QRCodeData[]>([]);
   const [selectedCode, setSelectedCode] = useState<QRCodeData>(createBlankCode);
-
-  // Lock body scroll if in takeover mode
-  useEffect(() => {
-    if (isTakeoverMode) {
-      document.documentElement.classList.add('qr-studio-takeover-active');
-      document.body.classList.add('qr-studio-takeover-active');
-    }
-    return () => {
-      document.documentElement.classList.remove('qr-studio-takeover-active');
-      document.body.classList.remove('qr-studio-takeover-active');
-    };
-  }, [isTakeoverMode]);
 
   // Check URL hash for direct tab navigation (e.g. #/analytics or #/codes)
   useEffect(() => {
@@ -87,37 +64,42 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const loadCodes = async () => {
+  const [error, setError] = useState('');
+
+  const loadCodes = async (selectInitial = false) => {
     try {
       const list = await api.getCodes();
       setCodes(list);
-      if (list.length > 0 && !selectedCode.id) {
-        setSelectedCode(list[0]);
+      if (selectInitial && list.length > 0) {
+        setSelectedCode(previous => previous.id ? previous : list[0]);
       }
+      setError('');
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'Could not load QR codes.');
     }
   };
 
   useEffect(() => {
-    loadCodes();
+    loadCodes(true);
   }, []);
 
   const handleSaveCode = async (updated: QRCodeData) => {
     const saved = await api.saveCode(updated);
     setSelectedCode(saved);
-    await loadCodes();
+    setCodes(previous => previous.some(code => code.id === saved.id)
+      ? previous.map(code => code.id === saved.id ? saved : code)
+      : [saved, ...previous]);
   };
 
   const handleDeleteCode = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this QR code and its analytics?')) {
-      await api.deleteCode(id);
-      await loadCodes();
-      const remaining = codes.filter((c) => c.id !== id);
-      if (remaining.length > 0) {
-        setSelectedCode(remaining[0]);
-      } else {
-        setSelectedCode(createBlankCode());
+      try {
+        await api.deleteCode(id);
+        await loadCodes();
+        const remaining = codes.filter((c) => c.id !== id);
+        setSelectedCode(remaining[0] || createBlankCode());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not delete QR code.');
       }
     }
   };
@@ -132,18 +114,11 @@ export const App: React.FC = () => {
     setActiveTab('designer');
   };
 
-  const handleSimulateScan = () => {
-    if (selectedCode.id) {
-      api.simulateScan(selectedCode);
-      loadCodes();
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#060708] text-[#e5e5e8] font-sans">
+    <div className="qr-studio-app bg-[#060708] text-[#e5e5e8] font-sans">
       {/* Top Navbar matching Onyx Minimal styling */}
-      <header className="bg-[#0b0c0e] border-b border-[#23252d] sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <header className="qr-studio-header bg-[#0b0c0e] border-b border-[#23252d] z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#0891b2] flex items-center justify-center text-white shadow-sm shadow-cyan-500/20">
               <QrCode className="w-6 h-6" />
@@ -152,14 +127,14 @@ export const App: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-lg text-white tracking-tight">4QR Studio</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60 uppercase">
-                  v1.0.0
+                  v1.1.0
                 </span>
               </div>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <nav className="flex items-center gap-1 sm:gap-2">
+          <nav aria-label="4QR Studio" className="flex flex-wrap items-center gap-1 sm:gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('designer')}
@@ -202,6 +177,7 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('settings')}
+              aria-label="Settings & Help"
               className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'settings'
                   ? 'bg-[#16171c] text-[#22d3ee] border border-[#23252d]'
@@ -211,29 +187,18 @@ export const App: React.FC = () => {
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
             </button>
-
-            {isWpFrontend && (
-              <a
-                href={api.getSiteUrl() || '/'}
-                className="ml-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-[#9fa0aa] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Return to WordPress Website"
-              >
-                <ExternalLink className="w-4 h-4 text-cyan-400" />
-                <span className="hidden md:inline">Back to Site</span>
-              </a>
-            )}
           </nav>
         </div>
       </header>
 
       {/* Main Content View with Ambient Glow */}
       <main className="py-4 relative ambient-glow">
+        {error && <p role="alert" className="mx-6 mb-4 rounded-xl border border-red-800 bg-red-950 p-4 text-red-200">{error}</p>}
         {activeTab === 'designer' && (
           <QRDesigner
             currentCode={selectedCode}
             onBack={() => setActiveTab('codes')}
             onSave={handleSaveCode}
-            onSimulateScan={handleSimulateScan}
           />
         )}
 

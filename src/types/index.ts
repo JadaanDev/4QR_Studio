@@ -7,6 +7,7 @@ export type CornerDotType = 'square' | 'dot' | 'rounded' | 'leaf' | 'diamond' | 
 export type DownloadFormat = 'png' | 'svg' | 'pdf';
 
 export interface QRStyleConfig {
+  encodeMode?: 'dynamic' | 'direct';
   pattern: DotType;
   cornerSquare: CornerSquareType;
   cornerDot: CornerDotType;

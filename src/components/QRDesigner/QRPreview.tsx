@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling, { DotType as QRDotType, CornerSquareType as QRCornerSquareType, CornerDotType as QRCornerDotType } from 'qr-code-styling';
 import { jsPDF } from 'jspdf';
-import { Download, Check, Sparkles, Copy, QrCode, Link2, Image as ImageIcon } from 'lucide-react';
+import { Download, Check, Copy, Link2, Image as ImageIcon } from 'lucide-react';
 import { QRStyleConfig, DownloadFormat } from '../../types';
 
 interface QRPreviewProps {
@@ -9,7 +9,7 @@ interface QRPreviewProps {
   shortUrl: string;
   activeEncodedUrl: string;
   styleConfig: QRStyleConfig;
-  onSimulateScan?: () => void;
+  exportDisabled: boolean;
 }
 
 export const QRPreview: React.FC<QRPreviewProps> = ({
@@ -17,7 +17,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   shortUrl,
   activeEncodedUrl,
   styleConfig,
-  onSimulateScan,
+  exportDisabled,
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
   const qrCodeInstance = useRef<QRCodeStyling | null>(null);
@@ -27,7 +27,6 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
-  const [scanAlert, setScanAlert] = useState(false);
 
   // Map application corner types to qr-code-styling accepted options
   const mapCornerSquare = (type: string): QRCornerSquareType => {
@@ -151,7 +150,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   }, [encodedData, styleConfig]);
 
   const handleDownload = async () => {
-    if (!qrCodeInstance.current) return;
+    if (!qrCodeInstance.current || exportDisabled) return;
     setIsDownloading(true);
 
     try {
@@ -174,7 +173,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
         if (rawSvg && ctx) {
           const svgData = new XMLSerializer().serializeToString(rawSvg);
           const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-          const URL = window.URL || window.webkitURL || window;
+          const URL = window.URL;
           const blobURL = URL.createObjectURL(svgBlob);
           const img = new Image();
 
@@ -222,6 +221,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   };
 
   const handleCopyLink = async () => {
+    if (exportDisabled) return;
     try {
       await navigator.clipboard.writeText(encodedData);
       setCopiedLink(true);
@@ -233,7 +233,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
 
   const handleCopyImage = async () => {
     const rawSvg = qrRef.current?.querySelector('svg');
-    if (!rawSvg) return;
+    if (!rawSvg || exportDisabled) return;
 
     try {
       const canvas = document.createElement('canvas');
@@ -244,7 +244,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
 
       const svgData = new XMLSerializer().serializeToString(rawSvg);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const URL = window.URL || window.webkitURL || window;
+      const URL = window.URL;
       const blobURL = URL.createObjectURL(svgBlob);
       const img = new Image();
 
@@ -279,28 +279,21 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
     }
   };
 
-  const handleTestScan = () => {
-    if (onSimulateScan) {
-      onSimulateScan();
-      setScanAlert(true);
-      setTimeout(() => setScanAlert(false), 3000);
-    }
-  };
-
   return (
     <div className="bg-[#0b0c0e] rounded-3xl p-6 md:p-8 border border-[#23252d] shadow-2xl flex flex-col items-center">
       {/* Live QR Render Area with high-contrast scanner backing */}
       <div className="relative flex items-center justify-center p-3 rounded-2xl bg-white shadow-lg transition-transform hover:scale-102 duration-200">
-        <div ref={qrRef} className="flex items-center justify-center" />
+        <div ref={qrRef} className="qr-studio-preview flex items-center justify-center" />
       </div>
 
       {/* Direct copyable link bar under QR */}
       <div className="w-full max-w-xs mt-4 flex items-center justify-between bg-[#101115] border border-[#23252d] rounded-xl px-3 py-1.5 text-xs">
-        <span className="font-mono text-[#22d3ee] truncate max-w-[200px]" title={encodedData}>
+        <span className="font-mono text-[#22d3ee] truncate max-w-[160px]" title={encodedData}>
           {encodedData}
         </span>
         <button
           type="button"
+          disabled={exportDisabled}
           onClick={handleCopyLink}
           title="Copy link of this QR code"
           className="text-[#22d3ee] hover:text-[#06b6d4] font-semibold flex items-center gap-1 cursor-pointer pl-2"
@@ -333,7 +326,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isDownloading}
+          disabled={isDownloading || exportDisabled}
           className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#0891b2] hover:bg-[#06b6d4] active:bg-[#0891b2] transition-all shadow-md hover:shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
         >
           {isDownloading ? (
@@ -346,7 +339,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           ) : (
             <>
               <Download className="w-5 h-5" />
-              <span>Download {format.toUpperCase()}</span>
+              <span>{exportDisabled ? 'Save before downloading' : `Download ${format.toUpperCase()}`}</span>
             </>
           )}
         </button>
@@ -355,6 +348,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           {/* Copy Link Button */}
           <button
             type="button"
+            disabled={exportDisabled}
             onClick={handleCopyLink}
             className="py-2.5 px-3 rounded-xl font-semibold text-xs text-[#ccccd2] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -365,6 +359,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
           {/* Copy Image Button */}
           <button
             type="button"
+            disabled={exportDisabled}
             onClick={handleCopyImage}
             className="py-2.5 px-3 rounded-xl font-semibold text-xs text-[#ccccd2] hover:text-white bg-[#101115] hover:bg-[#16171c] border border-[#23252d] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -374,33 +369,6 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
         </div>
       </div>
 
-      {/* Dynamic Link Tester / Scanner simulation */}
-      <div className="w-full max-w-xs mt-5 pt-4 border-t border-[#23252d] flex flex-col gap-2">
-        <div className="flex items-center justify-between text-xs text-[#9fa0aa]">
-          <span className="flex items-center gap-1 font-medium text-[#ccccd2]">
-            <Sparkles className="w-3.5 h-3.5 text-[#22d3ee]" />
-            Analytics Testing
-          </span>
-          <span className="text-[11px] bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 px-2 py-0.5 rounded-full font-semibold">
-            Trackable
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleTestScan}
-          className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-[#101115] hover:bg-[#16171c] text-[#ccccd2] hover:text-white border border-[#23252d] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <QrCode className="w-3.5 h-3.5 text-[#22d3ee]" />
-          Simulate Camera Scan (+1 Analytics)
-        </button>
-
-        {scanAlert && (
-          <div className="p-2 text-xs font-medium bg-emerald-950/60 text-emerald-300 rounded-lg text-center animate-fade-in border border-emerald-800/50">
-            ✓ Scan recorded! Check the Analytics tab.
-          </div>
-        )}
-      </div>
     </div>
   );
 };

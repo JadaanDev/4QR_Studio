@@ -3,7 +3,7 @@
  * Plugin Name: 4QR Studio - Dynamic QR Code Generator & Analytics
  * Plugin URI:  https://github.com/JadaanDev/4QR_Studio
  * Description: High-conversion Dynamic QR Code Generator with custom patterns, corner frames, logos, and real-time scan analytics tracking. Built with React & TailwindCSS.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      4QR Studio Team
  * Text Domain: four-qr-studio
  * Domain Path: /languages
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'QR_PLUGIN_VERSION', '1.0.0' );
+define( 'QR_PLUGIN_VERSION', '1.1.0' );
 define( 'QR_PLUGIN_DB_VERSION', '1.0.0' );
 define( 'QR_PLUGIN_FILE', __FILE__ );
 define( 'QR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -24,7 +24,6 @@ require_once QR_PLUGIN_DIR . 'includes/class-qr-db.php';
 require_once QR_PLUGIN_DIR . 'includes/class-qr-redirect.php';
 require_once QR_PLUGIN_DIR . 'includes/class-qr-rest.php';
 require_once QR_PLUGIN_DIR . 'includes/class-qr-admin.php';
-require_once QR_PLUGIN_DIR . 'includes/class-qr-shortcode.php';
 
 /**
  * Plugin activation hook.
@@ -59,7 +58,6 @@ function qr_plugin_init() {
     QR_Redirect::init();
     QR_REST::init();
     QR_Admin::init();
-    QR_Shortcode::init();
 }
 add_action( 'plugins_loaded', 'qr_plugin_init' );
 

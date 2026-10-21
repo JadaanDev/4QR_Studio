@@ -1,28 +1,11 @@
-@import "tailwindcss";
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) important;
 @import "../assets/admin-overrides.css";
 
+/* Keep resets inside the app; never reset html/body or WordPress chrome. */
 @layer base {
-  body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
+  #qr-studio-root { font-family: Inter, system-ui, sans-serif; }
+  #qr-studio-root input, #qr-studio-root select { color: inherit; }
 }
-
-/* Custom styles matching the exact UI design */
-.qr-preview-shadow {
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0, 0, 0, 0.04);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+.qr-preview-shadow { box-shadow: 0 10px 40px -10px rgba(0,0,0,.08); }

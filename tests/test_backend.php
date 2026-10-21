@@ -7,7 +7,7 @@
 // Define WordPress constants and mocks if running outside WordPress
 if ( ! defined( 'ABSPATH' ) ) {
     define( 'ABSPATH', __DIR__ . '/../' );
-    define( 'QR_PLUGIN_VERSION', '1.0.0' );
+    define( 'QR_PLUGIN_VERSION', '1.1.0' );
     define( 'QR_PLUGIN_DB_VERSION', '1.0.0' );
     define( 'QR_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
     define( 'QR_PLUGIN_URL', 'http://localhost/wp-content/plugins/qr-wp-plugin/' );
@@ -33,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         private $params = array();
         public function __construct( $params = array() ) { $this->params = $params; }
         public function get_json_params() { return $this->params; }
+        public function get_param( $key ) { return $this->params[$key] ?? null; }
         public function offsetGet( $key ) { return $this->params[$key] ?? null; }
     }
 
@@ -47,6 +48,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         public $prefix = 'wp_';
         public $pdo;
         public $insert_id = 0;
+        public $fail_next_write = false;
 
         public function __construct() {
             $this->pdo = new PDO( 'sqlite::memory:' );
@@ -84,6 +86,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         }
 
         public function insert( $table, $data, $format = null ) {
+            if ( $this->fail_next_write ) { $this->fail_next_write = false; return false; }
             $cols = array_keys( $data );
             $placeholders = array_fill( 0, count( $cols ), '?' );
             $sql = "INSERT INTO {$table} (" . implode( ',', $cols ) . ") VALUES (" . implode( ',', $placeholders ) . ")";
@@ -94,6 +97,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         }
 
         public function update( $table, $data, $where, $format = null, $where_format = null ) {
+            if ( $this->fail_next_write ) { $this->fail_next_write = false; return false; }
             $set = array();
             $vals = array();
             foreach ( $data as $k => $v ) {
@@ -152,7 +156,7 @@ function assert_test( $name, $condition ) {
 // 1. Test Database Schema creation in SQLite
 $wpdb->query( "CREATE TABLE IF NOT EXISTS wp_qr_codes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug VARCHAR(32) UNIQUE,
+    slug VARCHAR(64) UNIQUE,
     title VARCHAR(255) DEFAULT 'Untitled QR',
     qr_type VARCHAR(50) DEFAULT 'website',
     target_url TEXT NOT NULL,
@@ -166,7 +170,7 @@ $wpdb->query( "CREATE TABLE IF NOT EXISTS wp_qr_codes (
 $wpdb->query( "CREATE TABLE IF NOT EXISTS wp_qr_scans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     qr_id INTEGER NOT NULL,
-    slug VARCHAR(32) NOT NULL,
+    slug VARCHAR(64) NOT NULL,
     ip_hash VARCHAR(64) DEFAULT NULL,
     user_agent TEXT DEFAULT NULL,
     device VARCHAR(50) DEFAULT 'Desktop',
@@ -247,6 +251,55 @@ assert_test( "Analytics reports total_scans == 1", ( $ana_data['total_scans'] ??
 assert_test( "Analytics reports unique_scans == 1", ( $ana_data['unique_scans'] ?? 0 ) === 1 );
 assert_test( "Analytics reports recent scan entry", count( $ana_data['recent_scans'] ?? array() ) === 1 );
 
+// 8. Editable dynamic links must preserve identity, style and analytics.
+$renamed = QR_REST::save_code( new WP_REST_Request( array(
+    'id' => $code_id, 'slug' => 'summer-2026', 'title' => 'Summer Campaign',
+    'target_url' => 'https://jadaan.dev/new-destination',
+    'style_config' => array( 'pattern' => 'dots', 'encodeMode' => 'direct' ),
+) ) );
+$renamed_data = $renamed->data['data'];
+assert_test( 'Rename preserves the code ID', $renamed_data['id'] === $code_id );
+assert_test( 'Rename returns the edited short URL', $renamed_data['short_url'] === 'https://jadaan.dev/md/q/summer-2026' );
+assert_test( 'Rename saves the destination', $renamed_data['target_url'] === 'https://jadaan.dev/new-destination' );
+assert_test( 'Link mode is persisted in style config', $renamed_data['style_config']['encodeMode'] === 'direct' );
+assert_test( 'Rename preserves the scan counter', $renamed_data['scans_count'] === 1 );
+assert_test( 'Previous link is retired after rename', ! $wpdb->get_var( "SELECT id FROM wp_qr_codes WHERE slug = '4jwdh'" ) );
+$history = QR_REST::get_analytics( new WP_REST_Request( array( 'qr_id' => $code_id ) ) )->data['data'];
+assert_test( 'Rename preserves analytics by code ID', $history['total_scans'] === 1 && count( $history['recent_scans'] ) === 1 );
+
+// A second code checks real per-code analytics filtering and collision handling.
+$second = QR_REST::save_code( new WP_REST_Request( array( 'slug' => 'other-link', 'target_url' => 'https://example.org' ) ) )->data['data'];
+QR_Redirect::record_scan( $wpdb->get_row( 'SELECT * FROM wp_qr_codes WHERE id = ' . (int) $second['id'] ) );
+$filtered = QR_REST::get_analytics( new WP_REST_Request( array( 'qr_id' => $code_id ) ) )->data['data'];
+assert_test( 'Per-code analytics excludes other codes', $filtered['total_scans'] === 1 && count( $filtered['recent_scans'] ) === 1 );
+$duplicate = QR_REST::save_code( new WP_REST_Request( array( 'slug' => 'SUMMER-2026', 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Duplicate create rejected case-insensitively', $duplicate instanceof WP_Error && $duplicate->data['status'] === 409 );
+$collision = QR_REST::save_code( new WP_REST_Request( array( 'id' => $code_id, 'slug' => 'OTHER-LINK', 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Duplicate rename rejected case-insensitively', $collision instanceof WP_Error && $collision->code === 'slug_conflict' );
+assert_test( 'Rejected rename leaves original link intact', $wpdb->get_var( "SELECT slug FROM wp_qr_codes WHERE id = $code_id" ) === 'summer-2026' );
+$same = QR_REST::save_code( new WP_REST_Request( array( 'id' => $code_id, 'slug' => 'summer-2026', 'target_url' => 'https://jadaan.dev/final' ) ) );
+assert_test( 'Saving own existing link is allowed', ! ( $same instanceof WP_Error ) );
+$omitted = QR_REST::save_code( new WP_REST_Request( array( 'id' => $code_id, 'target_url' => 'https://jadaan.dev/final' ) ) );
+assert_test( 'Updates without a slug preserve the link', $omitted->data['data']['slug'] === 'summer-2026' );
+
+foreach ( array( '', 'with space', '../path', 'a/b', 'https://example.org', 'a?b', 'a#b', 'café', str_repeat( 'a', 65 ), array( 'bad' ) ) as $invalid ) {
+    $bad = QR_REST::save_code( new WP_REST_Request( array( 'slug' => $invalid, 'target_url' => 'https://example.org' ) ) );
+    assert_test( 'Invalid slug rejected: ' . json_encode( $invalid ), $bad instanceof WP_Error && $bad->code === 'invalid_slug' );
+}
+$boundary = QR_REST::save_code( new WP_REST_Request( array( 'slug' => str_repeat( 'x', 64 ), 'target_url' => 'https://example.org' ) ) );
+assert_test( '64-character slug is accepted', strlen( $boundary->data['data']['slug'] ) === 64 );
+$generated = QR_REST::save_code( new WP_REST_Request( array( 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Missing create slug generates a valid link', preg_match( '/^[a-zA-Z0-9_-]{6}$/', $generated->data['data']['slug'] ) === 1 );
+$missing = QR_REST::save_code( new WP_REST_Request( array( 'id' => 999999, 'slug' => 'missing', 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Stale IDs do not silently create new codes', $missing instanceof WP_Error && $missing->data['status'] === 404 );
+$wpdb->fail_next_write = true;
+$failed = QR_REST::save_code( new WP_REST_Request( array( 'slug' => 'failed-insert', 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Insert failure does not report success', $failed instanceof WP_Error && $failed->code === 'save_failed' );
+$wpdb->fail_next_write = true;
+$failed = QR_REST::save_code( new WP_REST_Request( array( 'id' => $code_id, 'slug' => 'failed-update', 'target_url' => 'https://example.org' ) ) );
+assert_test( 'Update failure does not report success', $failed instanceof WP_Error && $failed->code === 'save_failed' );
+
 echo "\n====================================================\n";
 echo " RESULTS: $tests_passed / $total_tests tests passed successfully!\n";
 echo "====================================================\n";
+exit( $tests_passed === $total_tests ? 0 : 1 );

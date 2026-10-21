@@ -4,7 +4,7 @@
  * No Tailwind dependency required.
  */
 
-:root {
+#qr-studio-root {
     /* Onyx Palette (Dark Surfaces & Text) */
     --color-onyx-50:  #f6f6f7;
     --color-onyx-100: #e5e5e8; /* Default body text */
@@ -46,7 +46,7 @@
 }
 
 /* Base Body Application */
-html, body {
+#qr-studio-root {
     background-color: var(--color-onyx-950);
     color: var(--color-onyx-100);
     margin: 0;
@@ -56,32 +56,32 @@ html, body {
 }
 
 /* Cyan Text Highlighter */
-::selection {
+#qr-studio-root ::selection {
     background-color: var(--color-cyan-500);
     color: var(--color-onyx-950);
 }
 
-::-moz-selection {
+#qr-studio-root ::-moz-selection {
     background-color: var(--color-cyan-500);
     color: var(--color-onyx-950);
 }
 
 /* Minimal Dark Scrollbar */
-::-webkit-scrollbar {
+#qr-studio-root ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
-::-webkit-scrollbar-track {
+#qr-studio-root ::-webkit-scrollbar-track {
     background: var(--color-onyx-950);
 }
 
-::-webkit-scrollbar-thumb {
+#qr-studio-root ::-webkit-scrollbar-thumb {
     background: var(--color-onyx-800);
     border-radius: 4px;
     border: 2px solid var(--color-onyx-950);
 }
 
-::-webkit-scrollbar-thumb:hover {
+#qr-studio-root ::-webkit-scrollbar-thumb:hover {
     background: var(--color-onyx-700);
 }

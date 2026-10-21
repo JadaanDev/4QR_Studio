@@ -4,6 +4,7 @@ declare global {
   interface Window {
     qrStudioData?: {
       isWp: boolean;
+      isAdmin: boolean;
       restUrl: string;
       nonce: string;
       siteUrl: string;
@@ -13,6 +14,28 @@ declare global {
 }
 
 const isWp = typeof window !== 'undefined' && Boolean(window.qrStudioData?.isWp);
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const config = window.qrStudioData!;
+  const res = await fetch(`${config.restUrl}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.nonce, ...options.headers },
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json.message || 'The request failed. Please reload and try again.');
+  }
+  return json.data;
+}
+
+function normalizeCode(code: QRCodeData): QRCodeData {
+  return {
+    ...code,
+    id: Number(code.id),
+    scans_count: Number(code.scans_count || 0),
+    is_active: Boolean(Number(code.is_active)),
+  };
+}
 
 export function getSiteBaseUrl(): string {
   if (typeof window !== 'undefined' && window.qrStudioData?.siteUrl) {
@@ -64,34 +87,32 @@ export const api = {
 
   async getCodes(): Promise<QRCodeData[]> {
     if (isWp && window.qrStudioData) {
-      const res = await fetch(`${window.qrStudioData.restUrl}codes`, {
-        headers: { 'X-WP-Nonce': window.qrStudioData.nonce },
-      });
-      const json = await res.json();
-      return json.data || [];
+      return (await request<QRCodeData[]>('codes')).map(normalizeCode);
     }
     return getLocalCodes();
   },
 
   async saveCode(code: Partial<QRCodeData>): Promise<QRCodeData> {
     if (isWp && window.qrStudioData) {
-      const res = await fetch(`${window.qrStudioData.restUrl}codes`, {
+      return normalizeCode(await request<QRCodeData>('codes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': window.qrStudioData.nonce,
-        },
         body: JSON.stringify(code),
-      });
-      const json = await res.json();
-      return json.data;
+      }));
     }
 
     const list = getLocalCodes();
+    if (code.slug !== undefined && !/^[a-zA-Z0-9_-]{1,64}$/.test(code.slug)) {
+      throw new Error('Use 1–64 letters, numbers, hyphens or underscores for the QR Code Link.');
+    }
+    if (list.some(c => c.id !== code.id && c.slug.toLowerCase() === code.slug?.toLowerCase())) {
+      throw new Error('This QR Code Link is already in use. Choose another link.');
+    }
     let saved: QRCodeData;
     if (code.id) {
       const idx = list.findIndex(c => c.id === code.id);
+      if (idx < 0) throw new Error('QR code not found. Reload My Codes and try again.');
       saved = { ...list[idx], ...code } as QRCodeData;
+      saved.short_url = buildShortUrl(saved.slug);
       list[idx] = saved;
     } else {
       const slug = code.slug || Math.random().toString(36).substring(2, 8);
@@ -123,12 +144,8 @@ export const api = {
 
   async deleteCode(id: number): Promise<boolean> {
     if (isWp && window.qrStudioData) {
-      const res = await fetch(`${window.qrStudioData.restUrl}codes/${id}`, {
-        method: 'DELETE',
-        headers: { 'X-WP-Nonce': window.qrStudioData.nonce },
-      });
-      const json = await res.json();
-      return json.success;
+      await request(`codes/${id}`, { method: 'DELETE' });
+      return true;
     }
 
     const list = getLocalCodes().filter(c => c.id !== id);
@@ -138,20 +155,7 @@ export const api = {
 
   async getAnalytics(qrId?: number): Promise<AnalyticsData> {
     if (isWp && window.qrStudioData) {
-      const url = `${window.qrStudioData.restUrl}analytics${qrId ? `?qr_id=${qrId}` : ''}`;
-      const res = await fetch(url, {
-        headers: { 'X-WP-Nonce': window.qrStudioData.nonce },
-      });
-      const json = await res.json();
-      return json.data || {
-        total_scans: 0,
-        unique_scans: 0,
-        devices: [],
-        os: [],
-        browsers: [],
-        daily: [],
-        recent_scans: [],
-      };
+      return request<AnalyticsData>(`analytics${qrId ? `?qr_id=${qrId}` : ''}`);
     }
 
     // Local empty analytics computation
@@ -183,35 +187,4 @@ export const api = {
     };
   },
 
-  simulateScan(code: QRCodeData): void {
-    if (!code.id) return;
-    const devices = ['Mobile', 'Desktop', 'Tablet'];
-    const oss = ['iOS', 'Android', 'Windows 10/11', 'macOS'];
-    const browsers = ['Safari', 'Chrome', 'Firefox', 'Edge'];
-    const referrers = ['Camera App', 'Instagram', 'Direct', 'Facebook', 'Twitter / X'];
-
-    const newScan: ScanRecord = {
-      id: Date.now(),
-      qr_id: code.id,
-      slug: code.slug,
-      qr_title: code.title,
-      ip_hash: Math.random().toString(36).substring(2, 10),
-      device: devices[Math.floor(Math.random() * devices.length)],
-      os: oss[Math.floor(Math.random() * oss.length)],
-      browser: browsers[Math.floor(Math.random() * browsers.length)],
-      referrer: referrers[Math.floor(Math.random() * referrers.length)],
-      scanned_at: new Date().toISOString(),
-    };
-
-    const scans = getLocalScans();
-    scans.unshift(newScan);
-    localStorage.setItem(STORAGE_SCANS_KEY, JSON.stringify(scans));
-
-    const codes = getLocalCodes();
-    const idx = codes.findIndex(c => c.slug === code.slug);
-    if (idx !== -1) {
-      codes[idx].scans_count = (codes[idx].scans_count || 0) + 1;
-      localStorage.setItem(STORAGE_CODES_KEY, JSON.stringify(codes));
-    }
-  },
 };

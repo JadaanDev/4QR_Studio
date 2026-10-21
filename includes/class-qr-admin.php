@@ -26,8 +26,8 @@ class QR_Admin {
 
         add_submenu_page(
             'qr-studio',
-            __( 'Generator', 'qr-studio' ),
-            __( 'Generator', 'qr-studio' ),
+            __( 'Generator', 'four-qr-studio' ),
+            __( 'Generator', 'four-qr-studio' ),
             'edit_posts',
             'qr-studio',
             array( __CLASS__, 'render_app_page' )
@@ -35,18 +35,26 @@ class QR_Admin {
 
         add_submenu_page(
             'qr-studio',
-            __( 'Analytics', 'qr-studio' ),
-            __( 'Analytics', 'qr-studio' ),
+            __( 'Analytics', 'four-qr-studio' ),
+            __( 'Analytics', 'four-qr-studio' ),
             'edit_posts',
             'admin.php?page=qr-studio#/analytics'
         );
 
         add_submenu_page(
             'qr-studio',
-            __( 'My QR Codes', 'qr-studio' ),
-            __( 'My QR Codes', 'qr-studio' ),
+            __( 'My QR Codes', 'four-qr-studio' ),
+            __( 'My QR Codes', 'four-qr-studio' ),
             'edit_posts',
             'admin.php?page=qr-studio#/codes'
+        );
+
+        add_submenu_page(
+            'qr-studio',
+            __( 'Settings & Help', 'four-qr-studio' ),
+            __( 'Settings & Help', 'four-qr-studio' ),
+            'edit_posts',
+            'admin.php?page=qr-studio#/settings'
         );
     }
 
@@ -120,6 +128,9 @@ class QR_Admin {
     }
 
     public static function render_app_page() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_die( esc_html__( 'You do not have permission to access 4QR Studio.', 'four-qr-studio' ), '', array( 'response' => 403 ) );
+        }
         $dist_dir = QR_PLUGIN_DIR . 'dist/';
         $has_build = file_exists( $dist_dir . 'assets/index.js' );
 

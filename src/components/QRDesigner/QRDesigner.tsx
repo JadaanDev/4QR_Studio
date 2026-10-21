@@ -23,7 +23,6 @@ interface QRDesignerProps {
   currentCode: QRCodeData;
   onBack: () => void;
   onSave: (code: QRCodeData) => Promise<void>;
-  onSimulateScan: () => void;
 }
 
 const PATTERNS: DotType[] = [
@@ -59,17 +58,11 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
   currentCode,
   onBack,
   onSave,
-  onSimulateScan,
 }) => {
   const siteUrl = getSiteBaseUrl();
-  const [title, setTitle] = useState(currentCode.title || '4Jwdh');
-  const [targetUrl, setTargetUrl] = useState(
-    currentCode.target_url && !currentCode.target_url.includes('example.com')
-      ? currentCode.target_url
-      : siteUrl ? `${siteUrl}/` : 'https://example.com'
-  );
-  const [slug, setSlug] = useState(currentCode.slug || '4Jwdh');
-  const [encodeMode, setEncodeMode] = useState<'dynamic' | 'direct'>('dynamic');
+  const [title, setTitle] = useState(currentCode.title || 'Untitled QR');
+  const [targetUrl, setTargetUrl] = useState(currentCode.target_url || (siteUrl ? `${siteUrl}/` : ''));
+  const [slug, setSlug] = useState(currentCode.slug || '');
   const [styleConfig, setStyleConfig] = useState<QRStyleConfig>(
     currentCode.style_config || {
       pattern: 'classy',
@@ -88,15 +81,15 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
   const [copiedTarget, setCopiedTarget] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [renameAcknowledged, setRenameAcknowledged] = useState(false);
 
   useEffect(() => {
-    setTitle(currentCode.title || '4Jwdh');
-    if (currentCode.target_url && !currentCode.target_url.includes('example.com')) {
-      setTargetUrl(currentCode.target_url);
-    } else if (siteUrl) {
-      setTargetUrl(`${siteUrl}/`);
-    }
-    setSlug(currentCode.slug || '4Jwdh');
+    setTitle(currentCode.title || 'Untitled QR');
+    setTargetUrl(currentCode.target_url || (siteUrl ? `${siteUrl}/` : ''));
+    setSlug(currentCode.slug || '');
+    setRenameAcknowledged(false);
+    setSaveError('');
     if (currentCode.style_config) {
       setStyleConfig(currentCode.style_config);
     }
@@ -104,11 +97,20 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
 
   // Clean trackable short link computed dynamically from currently active site
   const shortLink = buildShortUrl(slug);
+  const encodeMode = styleConfig.encodeMode || 'dynamic';
+  const setEncodeMode = (mode: 'dynamic' | 'direct') => setStyleConfig(previous => ({ ...previous, encodeMode: mode }));
+  const slugError = /^[a-zA-Z0-9_-]{1,64}$/.test(slug) ? '' : 'Use 1–64 letters, numbers, hyphens or underscores.';
+  const isRenaming = Boolean(currentCode.id && slug.toLowerCase() !== currentCode.slug.toLowerCase());
+  const isDirty = title !== currentCode.title || targetUrl !== currentCode.target_url || slug !== currentCode.slug
+    || JSON.stringify(styleConfig) !== JSON.stringify(currentCode.style_config);
+  const exportDisabled = !currentCode.id || isDirty || isSaving;
+  const cannotSave = Boolean(slugError || !targetUrl.trim() || (isRenaming && !renameAcknowledged));
 
   // Active URL to be encoded into the QR pattern
   const activeEncodedUrl = encodeMode === 'dynamic' ? shortLink : (targetUrl || shortLink);
 
   const handleCopyShortLink = async () => {
+    if (exportDisabled) return;
     try {
       await navigator.clipboard.writeText(shortLink);
       setCopiedShort(true);
@@ -142,6 +144,8 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
   };
 
   const handleSave = async () => {
+    if (cannotSave) return;
+    setSaveError('');
     setIsSaving(true);
     try {
       await onSave({
@@ -155,7 +159,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
-      console.error(err);
+      setSaveError(err instanceof Error ? err.message : 'Could not save. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -164,7 +168,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 font-sans">
       {/* Top Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-[#23252d] gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-6 mb-6 border-b border-[#23252d] gap-4">
         <div>
           <div className="flex items-center gap-3">
             <button
@@ -177,21 +181,23 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
             </button>
             <input
               type="text"
+              aria-label="QR code title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-bold text-white bg-transparent hover:bg-white/5 focus:bg-[#101115] px-2 py-0.5 rounded-lg border border-transparent focus:border-[#0891b2] focus:outline-none transition-all"
+              className="min-w-0 w-full text-2xl font-bold text-white bg-transparent hover:bg-white/5 focus:bg-[#101115] px-2 py-0.5 rounded-lg border border-transparent focus:border-[#0891b2] focus:outline-none transition-all"
               placeholder="QR Code Title"
             />
           </div>
 
-          <div className="flex items-center gap-2 mt-2 text-sm text-[#9fa0aa]">
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-[#9fa0aa]">
             <span>Short link</span>
-            <span className="text-[#22d3ee] font-medium font-mono text-xs sm:text-sm bg-[#101115] px-2.5 py-0.5 rounded border border-[#23252d]">
+            <span className="break-all text-[#22d3ee] font-medium font-mono text-xs sm:text-sm bg-[#101115] px-2.5 py-0.5 rounded border border-[#23252d]">
               {shortLink}
             </span>
             <button
               type="button"
               onClick={handleCopyShortLink}
+              disabled={exportDisabled}
               title="Copy short link"
               className="px-2.5 py-1 bg-[#16171c] hover:bg-[#23252d] text-[#ccccd2] hover:text-white rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-[#23252d]"
             >
@@ -210,12 +216,12 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving}
-            className="px-5 py-2.5 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-xl text-sm font-bold shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
+            disabled={isSaving || cannotSave}
+            className="shrink-0 whitespace-nowrap px-5 py-2.5 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-xl text-sm font-bold shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
           >
             {isSaving ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : saveSuccess ? (
+            ) : saveSuccess && !isDirty ? (
               <>
                 <Check className="w-4 h-4 text-emerald-300" />
                 Saved
@@ -230,15 +236,38 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
         </div>
       </div>
 
+      {saveError && <p role="alert" className="mb-4 p-3 rounded-xl border border-red-800 bg-red-950 text-red-200">{saveError}</p>}
+      <p role="status" className="mb-4 text-sm text-[#9fa0aa]">
+        {exportDisabled ? 'Unsaved changes — save your QR code before copying or downloading it.' : 'Saved — your QR code is ready to share.'}
+      </p>
+
       {/* Main Grid: Left Controls, Right Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Generator controls */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-8">
+          <section aria-labelledby="qr-link-label" className="bg-[#0b0c0e] rounded-2xl p-5 border border-[#23252d] space-y-3">
+            <label id="qr-link-label" htmlFor="qr-link-slug" className="block text-sm font-bold text-white">QR Code Link</label>
+            <p id="qr-link-help" className="text-xs text-[#9fa0aa]">Choose the last part of your dynamic link. The site address and /q/ prefix stay fixed.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-[#9fa0aa] break-all">{siteUrl}/q/</span>
+              <input id="qr-link-slug" type="text" value={slug} maxLength={64} spellCheck={false} autoCapitalize="none" autoComplete="off"
+                aria-describedby={slugError ? 'qr-link-help qr-link-error' : 'qr-link-help'} aria-invalid={Boolean(slugError)}
+                onChange={event => { setSlug(event.target.value); setRenameAcknowledged(false); setSaveSuccess(false); setSaveError(''); }}
+                className="min-w-0 flex-1 px-3 py-2 bg-[#101115] border border-[#23252d] rounded-xl text-white font-mono" />
+            </div>
+            {slugError && <p id="qr-link-error" role="alert" className="text-xs text-red-300">{slugError}</p>}
+            <p className="text-xs text-[#22d3ee] break-all">Preview: {shortLink}</p>
+            {isRenaming && <div className="space-y-2 p-3 rounded-xl border border-amber-800 bg-amber-950/40 text-xs text-amber-200">
+              <p>Changing this link retires {buildShortUrl(currentCode.slug)}. Printed QRs using that link will stop working. Download and replace them after saving. Scan history is retained.</p>
+              <label className="flex items-start gap-2 cursor-pointer"><input type="checkbox" checked={renameAcknowledged} onChange={event => setRenameAcknowledged(event.target.checked)} />I understand that the previous link will stop working.</label>
+            </div>}
+            {!isRenaming && <p className="text-xs text-[#9fa0aa]">To update an existing printed QR, change only its Destination URL below.</p>}
+          </section>
           {/* Destination URL & Encode Mode Card */}
           <div className="bg-[#0b0c0e] rounded-2xl p-5 border border-[#23252d] shadow-xs space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-[#9fa0aa] uppercase tracking-wider">
+                <label htmlFor="qr-destination" className="text-xs font-bold text-[#9fa0aa] uppercase tracking-wider">
                   Destination URL
                 </label>
                 <button
@@ -255,6 +284,7 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                   <Globe className="w-4 h-4" />
                 </div>
                 <input
+                  id="qr-destination"
                   type="url"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
@@ -329,6 +359,8 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                     <button
                       key={p}
                       type="button"
+                      aria-label={`Pattern: ${p}`}
+                      aria-pressed={isActive}
                       onClick={() => setStyleConfig((prev) => ({ ...prev, pattern: p }))}
                       className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
@@ -355,6 +387,8 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                     <button
                       key={cs}
                       type="button"
+                      aria-label={`Outer corner: ${cs}`}
+                      aria-pressed={isActive}
                       onClick={() => setStyleConfig((prev) => ({ ...prev, cornerSquare: cs }))}
                       className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
@@ -376,6 +410,8 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
                     <button
                       key={cd}
                       type="button"
+                      aria-label={`Inner corner: ${cd}`}
+                      aria-pressed={isActive}
                       onClick={() => setStyleConfig((prev) => ({ ...prev, cornerDot: cd }))}
                       className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                         isActive
@@ -447,6 +483,9 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
             <div className="flex items-center gap-3 pt-1">
               <button
                 type="button"
+                role="switch"
+                aria-label="Transparent background"
+                aria-checked={styleConfig.isTransparent}
                 onClick={() => setStyleConfig((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   styleConfig.isTransparent ? 'bg-[#0891b2]' : 'bg-[#23252d]'
@@ -544,13 +583,13 @@ export const QRDesigner: React.FC<QRDesignerProps> = ({
         </div>
 
         {/* Right Column: Live QR Preview Card (Floating / Sticky) */}
-        <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
+        <div className="qr-studio-preview-panel lg:col-span-5 xl:col-span-4">
           <QRPreview
             dataUrl={targetUrl}
             shortUrl={shortLink}
             activeEncodedUrl={activeEncodedUrl}
             styleConfig={styleConfig}
-            onSimulateScan={onSimulateScan}
+            exportDisabled={exportDisabled}
           />
         </div>
       </div>
