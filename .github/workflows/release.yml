@@ -1,0 +1,61 @@
+name: Verify and release plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: pdo_sqlite
+          coverage: none
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:api
+      - name: Check PHP syntax
+        run: find includes tests -name '*.php' -print0 | xargs -0 -n1 php -l && php -l qr-wp-plugin.php
+      - run: php tests/test_backend.php
+      - run: php tests/test_admin.php
+      - name: Build distributable
+        run: python3 make_zip.py --rebuild --method zipfile
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json')).version")
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+          grep -Eq "Version: +$VERSION$" qr-wp-plugin.php
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qr-wp-plugin
+          path: qr-wp-plugin.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: qr-wp-plugin
+      - name: Publish installable WordPress ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" qr-wp-plugin.zip --verify-tag --title "4QR Studio $GITHUB_REF_NAME" --notes-file CHANGELOG.md

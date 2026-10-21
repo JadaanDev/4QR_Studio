@@ -26,6 +26,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 INCLUDE_FILES = [
     "qr-wp-plugin.php",
     "README.md",
+    "CHANGELOG.md",
+    "UI-UX-PLAN.md",
 ]
 
 INCLUDE_DIRS = [
@@ -185,7 +187,10 @@ def main():
 
     if args.rebuild:
         print("[*] Rebuilding Vite frontend...")
-        run_command("npm run build", cwd=SCRIPT_DIR)
+        res = run_command("npm run build", cwd=SCRIPT_DIR)
+        if res.returncode != 0:
+            print(f"[ERROR] Build failed:\n{res.stdout}\n{res.stderr}")
+            sys.exit(1)
     else:
         ensure_build()
 
